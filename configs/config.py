@@ -6,7 +6,7 @@ def get_args():
     parser = argparse.ArgumentParser('zzwei code for precipitation nowcasting', add_help=False)
     # Setup parameters
     parser.add_argument('--device', default='cpu', type=str)
-    parser.add_argument('--res_dir', default='/home/zhaozewei/Documents/WeatherRadar/RadarExtrapolation/zzwei_paper_code/configs/zzwei_results/', type=str)
+    parser.add_argument('--res_dir', default='./', type=str)
     parser.add_argument('--seed', default=1234, type=int)    
     parser.add_argument('--dataset', default='SEVIR', type=str, choices=['SEVIR','SRAD2018','Shanghai2020','CIKM2017'])
     parser.add_argument('--accumulation_steps',default=2,type=int)
@@ -67,14 +67,13 @@ def get_args():
     parser.add_argument('--lr', default=0.00012, type=float, help='Learning rate') # shanghai2020波动大
     parser.add_argument('--lr_d',default=0.0001)
     parser.add_argument('--early_stop_gan',default=1000)
-    parser.add_argument('--test_result_dir',default='/home/zhaozewei/Documents/WeatherRadar/RadarExtrapolation/zzwei_paper_code/tmp_1/')#'/root/data/WeatherRadar/test_results/SRAD/trajgru_gan/')#'/root/data/WeatherRadar/test_results/SEVIR/paper/datswinlstm_memory_gan')#'/root/ljy_space/zzw/zzwei_results/Shanghai2020-ConvLSTM/pred_gan/')#'/root/data/WeatherRadar/test_results/SEVIR/simvp_gan/')#'/root/ljy_space/zzw/zzwei_results/cikm2017_results/MotionRNN/')#'/root/ljy_space/zzw/zzwei_results/SRAD2018-DATSWIN-LSTM-D-Memory/pred/') # /root/ljy_space/zzw/zzwei_results/SEVIR-DATSWinLSTM-D-Memory/pred/'/home/ljy_space/zzw/srad_test_results_with_z/'    
-    
+    parser.add_argument('--test_result_dir',default='./')
     args = parser.parse_args()
     
     if args.dataset == 'SRAD2018':
-        args.train_data_dir = '/root/data/WeatherRadar/srad/train/'
-        args.validation_data_dir='/root/data/WeatherRadar/srad/val/'
-        args.test_data_dir = '/root/data/WeatherRadar/srad/test/'
+        args.train_data_dir = ''
+        args.validation_data_dir=''
+        args.test_data_dir = ''
         args.total_length = 24
         args.num_frames_input = 12
         args.num_frames_output = 12
@@ -83,9 +82,9 @@ def get_args():
         args.long_len = 24
         args.out_len = 12  
     elif args.dataset == 'SEVIR':
-        args.train_data_dir = '/home/ljy/Desktop/8T_mount/SEVIR/processed_3(12_24)(copy_1)/train/'
-        args.validation_data_dir='//home/ljy/Desktop/8T_mount/SEVIR/processed_3(12_24)(copy_1)/validation/'
-        args.test_data_dir = '/home/zhaozewei/Documents/WeatherRadar/RadarExtrapolation/dat_swin_code_prepare/seq/' #'/home/ljy/Desktop/8T_mount/SEVIR/processed_3(12_24)(copy_1)/test/'
+        args.train_data_dir = ''
+        args.validation_data_dir=''
+        args.test_data_dir = '' 
         args.total_length = 24
         args.num_frames_input = 12
         args.num_frames_output = 12
@@ -94,9 +93,9 @@ def get_args():
         args.long_len = 24
         args.out_len = 24           
     elif args.dataset == 'CIKM2017':
-        args.train_data_dir = '/root/zhaozewei/Documents/WeatherRadar/RadarExtrapolation/CIKM2017_dataset/train/'
-        args.validation_data_dir='/root/zhaozewei/Documents/WeatherRadar/RadarExtrapolation/CIKM2017_dataset/validation/'
-        args.test_data_dir = '/root/zhaozewei/Documents/WeatherRadar/RadarExtrapolation/CIKM2017_dataset/test/'
+        args.train_data_dir = ''
+        args.validation_data_dir=''
+        args.test_data_dir = ''
         args.total_length = 15
         args.num_frames_input = 5
         args.num_frames_output = 10
