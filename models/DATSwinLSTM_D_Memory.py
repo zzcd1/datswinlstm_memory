@@ -937,9 +937,6 @@ if __name__ == '__main__':
     os.environ['MASTER_PORT'] = '5678'    
     import argparse
     device = torch.device('cuda:0')
-    import sys
-    sys.path.append('/home/zhaozewei/Documents/WeatherRadar/RadarExtrapolation/zzwei_paper_code/')
-    # from dataloader.sevir_zzw.sevir_torch_wrap import SEVIRTorchDataset
     import datetime
     import numpy as np
     from dataloader.dataloader import SEVIR
