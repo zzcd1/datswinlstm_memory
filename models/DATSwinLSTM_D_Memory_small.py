@@ -8,28 +8,55 @@ from MotionSqueeze import MS
 import torch.utils.checkpoint as checkpoint
 from dat_blocks import DATSwinLayer, DATSwinTransformerBlock
 
-
-class MotionEncoder2D(nn.Module):
-    def __init__(self, in_len=12, out_c=400):
-        super(MotionEncoder2D, self).__init__()
-        self.conv2d_1 = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3)),
-            nn.SiLU())
-        self.conv2d_2 = nn.Sequential(nn.Conv2d(32, 64, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1)),
-                                      nn.SiLU())
-        self.conv2d_3 = nn.Sequential(nn.Conv2d(64, 128, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1)),
-                                      nn.SiLU())
-        self.conv2d_4 = nn.Sequential(nn.Conv2d(128, 256, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1)),
-                                      nn.SiLU())
-        self.conv2d_5 = nn.Sequential(nn.Conv2d(256, out_c, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1)),
-                                      nn.SiLU())
+### 基于3D卷积
+class MotionEncoder3D(nn.Module):
+    def __init__(self):
+        super(MotionEncoder3D,self).__init__()
         self.conv3d_1 = nn.Sequential(
-            nn.Conv3d(out_c, out_c, kernel_size=(3, 3, 3), stride=(2, 2, 2), padding=(0, 1, 1)),
-            nn.SiLU())
-        self.conv3d_2 = nn.Sequential(
-            nn.Conv3d(out_c, out_c, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(0, 1, 1)),
-            nn.SiLU())
-        self.avg_pool_3d = nn.AdaptiveAvgPool3d([1, None, None])
+                                      nn.Conv3d(1,32,kernel_size=(3,7,7),stride=(1,2,2),padding=(1,3,3)),
+                                      nn.SiLU())
+        self.conv3d_2 = nn.Sequential(nn.Conv3d(32,64,kernel_size=(3,3,3),stride=(1,2,2),padding=(0,1,1)),
+                                      nn.SiLU())
+        self.conv3d_3 = nn.Sequential(nn.Conv3d(64,128,kernel_size=(3,3,3),stride=(1,2,2),padding=(1,1,1)),
+                                      nn.SiLU())
+        self.conv3d_4 = nn.Sequential(nn.Conv3d(128,512,kernel_size=(3,3,3),stride=(1,2,2),padding=(0,1,1)),
+                                      nn.SiLU())
+        # self.linear = nn.Sequential(nn.Linear(256,240),
+        #                             nn.SiLU() )## 240, memory_size)
+        self.avg_pool = nn.AdaptiveAvgPool3d([1,6,6])
+    
+    def forward(self,x):
+        x = x.permute(0,2,1,3,4)
+        x = self.conv3d_1(x)
+        x = self.conv3d_2(x)
+        x = self.conv3d_3(x)
+        x = self.conv3d_4(x)
+        x = self.avg_pool(x)
+        # x = self.linear(x)
+        return x.squeeze(2)
+
+
+#class MotionEncoder2D(nn.Module):
+#    def __init__(self, in_len=12, out_c=400):
+#        super(MotionEncoder2D, self).__init__()
+#        self.conv2d_1 = nn.Sequential(
+#            nn.Conv2d(1, 32, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3)),
+#            nn.SiLU())
+#        self.conv2d_2 = nn.Sequential(nn.Conv2d(32, 64, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1)),
+ #                                     nn.SiLU())
+#        self.conv2d_3 = nn.Sequential(nn.Conv2d(64, 128, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1)),
+#                                      nn.SiLU())
+#        self.conv2d_4 = nn.Sequential(nn.Conv2d(128, 256, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1)),
+#                                      nn.SiLU())
+#        self.conv2d_5 = nn.Sequential(nn.Conv2d(256, out_c, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1)),
+#                                      nn.SiLU())
+#        self.conv3d_1 = nn.Sequential(
+#            nn.Conv3d(out_c, out_c, kernel_size=(3, 3, 3), stride=(2, 2, 2), padding=(0, 1, 1)),
+#            nn.SiLU())
+#        self.conv3d_2 = nn.Sequential(
+#            nn.Conv3d(out_c, out_c, kernel_size=(3, 3, 3), stride=(2, 1, 1), padding=(0, 1, 1)),
+#            nn.SiLU())
+#        self.avg_pool_3d = nn.AdaptiveAvgPool3d([1, None, None])
 
     def forward(self, x):
         print(f"MotionEncoder2D Input: {x.shape}")
@@ -147,8 +174,12 @@ class Memory(nn.Module):
         self.memory_slot_size = memory_slot_size
         self.short_len = short_len
         self.long_len = long_len
-        self.motion_encoder_2d = MotionEncoder2D(in_len=self.short_len, out_c=self.memory_size)
-        self.motion_context_encoder_2d = MotionEncoder2D(in_len=self.long_len, out_c=self.memory_size)
+        #self.motion_encoder_2d = MotionEncoder2D(in_len=self.short_len, out_c=self.memory_size)
+        #self.motion_context_encoder_2d = MotionEncoder2D(in_len=self.long_len, out_c=self.memory_size)
+        ## 使用新的motion_encoder
+        self.motion_encoder_2d = MotionEncoder3D()
+        self.motion_context_encoder_2d = MotionEncoder3D()
+
         self.pos_embedding = nn.Parameter(torch.randn(1, 6 * 6, self.memory_size))
         self.additional_linear = nn.Linear(self.memory_size, 512)
         self.embedder = nn.Sequential(
@@ -178,6 +209,9 @@ class Memory(nn.Module):
 
     def forward(self, inputs, memory_x, phase):
         print(f"Memory Input: inputs {inputs.shape}, memory_x {memory_x.shape}, phase {phase}")
+        ## 用帧差作为运动信息
+        memory_x = memory_x[:,1:,...] - memory_x[:,:-1,...] # B,T,C,H,W
+
         b, t, c, h, w = memory_x.shape
         memory_query = self.motion_context_encoder_2d(memory_x) if phase == 1 else self.motion_encoder_2d(memory_x)
         print(f"After motion_encoder: {memory_query.shape}")
@@ -714,6 +748,7 @@ class UpSample(nn.Module):
             self.upsample.append(upsample)
 
         # 调整最终的上采样层，以确保输出尺寸为384x384
+        # 必须用sigmoid吗？可以先这样，效果不好再改
         self.final_upsample = nn.Sequential(
             nn.ConvTranspose2d(in_channels=64, out_channels=in_chans, kernel_size=4, stride=2, padding=1),
             nn.Sigmoid()
